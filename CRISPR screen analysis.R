@@ -1,5 +1,8 @@
 ## ANALYSIS PIPELINE
 
+#demultiplexing with Bcl2Fastq, trimming with cutadapt, alignment with Bowtie2, and counting and testing with MAGeCK were performed in the terminal
+#all the other analysis steps like plotting and gene set enrichment analysis on R
+
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #1. DEMULTIPLEXING FASTQS WITH Bcl2Fastq (Illumina), each sample has a unique barcode in the P7 primer. 
