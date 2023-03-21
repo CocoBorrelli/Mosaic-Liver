@@ -1,23 +1,23 @@
 ## ANALYSIS PIPELINE
 
-#1. demultiplexing of FASTQS with Bcl2Fastq (Illumina), each sample has a unique barcode in the P7 primer. 
+#1. DEMULTIPLEXING FASTQS WITH Bcl2Fastq (Illumina), each sample has a unique barcode in the P7 primer. 
 
 #---------------------------––--#
 
-#2. trimming with cutadapt > cutadapt loop
+#2. TRIMMING with cutadapt > cutadapt loop
 cutadapt -g CACCG -o B11_trimup.fastq ../demux_fastqs/B11_merged.fastq.gz
 cutadapt -a GTTTT -o B11_trimmed.fastq B11_trimup.fastq
 
 #---------------------------––--#
 
-#3. bowtie alignment
+#3. ALIGNMENT with Bowtie2
 awk -F ',' '{print ">"$1"\n"$2}' library2.csv > library2.fa #build bowtie index 
 bowtie2-build library2.fa bowtie2_ind_library
 bowtie2 -x bowtie2_ind_library -U ../cutadapt_output/B11_trimmed.fastq --norc | samtools view -bS - > B11.bam
 
 #---------------------------––--#
 
-#4. check library retention with correlation between plasmid prep and post injection library (fig 1)
+#4. LIBRARY RETENTION: calculate correlation between plasmid prep and post injection library (fig 1)
 mageck count -l library2.csv -n premets_SPH1 --sample-label "premets,SPH1" --fastq 3071.bam SPH1.bam --norm-method total
 
 premets_SPH1.count_normalized <- read.delim("premets_SPH1.count_normalized.txt")
@@ -33,7 +33,7 @@ ggscatter(premets_SPH1.count_normalized, x = "preinj", y = "plasmid",
 
 #---------------------------––--#
 
-#5. check stats and correlation
+#5. LIBRARY STATS
 
 #count all Cre samples to get stats in countsummary
 mageck count -l library2.csv -n SPH_sum --sample-label "distal,proximal" --fastq 3174distal.bam,3068distal.bam,3039distal.bam,3379distal.bam,3425distal.bam,3434distal.bam,3436proximal.bam 3174proximal.bam,3068proximal.bam,3039proximal.bam,3379proximal.bam,3425proximal.bam,3434proximal.bam,3436distal.bam  
@@ -65,7 +65,7 @@ c <- ggplot(data=SPH_sum.countsummary, aes(x=File, y=GiniIndex, fill=Label)) +
 ggarrange(a,b,c, ncol = 1, nrow = 3) +ggsave("stats.pdf", width = 5, height = 11)
 
 
-#check correlation of library batches (3 independent plasmid preps, SPH1 = Hi1, SPH2 = Hi2, SPH3 = Hi3)
+#check correlation between library batches (3 independent plasmid preps, SPH1 = Hi1, SPH2 = Hi2, SPH3 = Hi3)
 cd /NAS/Coco/MOSAIC\ LIVER/Experiments/Screen1/Fastqs/MAGECK/Bam_files
 mageck count -l library.csv -n SPH1 --sample-label "SPH1" --fastq A3.bam --norm-method total
 mageck count -l library.csv -n SPH2 --sample-label "SPH2" --fastq SPH2.bam --norm-method total
@@ -112,7 +112,7 @@ ggarrange(a,b,c,ncol = 3, nrow = 1) +ggsave("plasmid_SPH123.pdf", width = 10, he
 
 #---------------------------––--#
 
-#6. coverage plot sup fig 3
+#6. COVERAGE plot sup fig 3
 Coverageplot <- read.csv("Coverageplot.csv")
 View(Coverageplot)
 
@@ -123,7 +123,7 @@ ggplot(data=Coverageplot, aes(x=Sample, y=Total, fill=library)) +
  
 #---------------------------––--#
 
-#7. check of all mice and individually, use mageck to count and to perform robust rank aggregation test
+#7. ANALYSIS OF EACH MOUSE INDIVIDUALLY, use mageck to count and to perform robust rank aggregation test
 
 #SPH1
 mageck count -l library2.csv -n 3068 --sample-label "distal,proximal" --fastq 3068distal.bam 3068proximal.bam --norm-method total
@@ -195,7 +195,7 @@ View(`3431.gene_summary`)
 
 #---------------------------––--#
 
-#8. paired analysis per batch (sup fig 3)
+#8. PAIRED ANALYSIS OF EACH LIBRARY BATCH  (sup fig 3)
 
 #SPH1
 `3068.count_normalized` <- read.delim("3068.count_normalized.txt")
@@ -286,7 +286,7 @@ VolcanoView(gdata3, x = "Score", y = "FDR", Label = "id", x_cut = 0.05, y_cut = 
 
 #---------------------------––--#
 
-#8. paired analysis of all mice and batches (fig 3)
+#8. PAIRED ANALYSIS OF ALL MICE AND BATCHES (fig 3)
 
 SPH1_2_3 <- list(`3174.count_normalized` ,`3068.count_normalized`, `3039.count_normalized`, 
                  `3379.count_normalized`, `3425.count_normalized`, `3434.count_normalized`, 
@@ -406,7 +406,8 @@ ggplot(BP %>% filter(abs(NES)>1) %>% head(n= 20), aes(reorder(pathway, NES), NES
 
 #---------------------------––--#
 
-#9. analysis of Cre vs non Cre mice. As number of mice is not the same, cannot compare with paired analysis > do summed analysis instead
+#9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES. 
+#As number of mice is not the same, cannot compare with paired analysis > first sum all mice per batches, then paired analysis 
 
 #sum all no Cre mice for SPH1, 2 and 3
 mageck count -l library2.csv -n SPH1nocre_sum --sample-label "distal,proximal" --fastq 3070distal.bam 3070proximal.bam  
@@ -468,54 +469,11 @@ mageck test -k SPH_counts.txt -t SPH1p,SPH2p,SPH3p -c SPH1d,SPH2d,SPH3d -n SPH12
 SPH123_paired.gene_summary <- read.delim("SPH123_paired.gene_summary.txt")
 View(SPH123_paired.gene_summary)
 
-
-###HERE 
-####MAGeCK FLUTE####
-library(MAGeCKFlute)
-library(clusterProfiler)
-library(ggplot2)
-SPH123_paired.gene_summary <- read.delim("/media/Coco/MOSAIC LIVER/Experiments/Screen1/Fastqs/MAGECK/Bam_files/SPH123_paired.gene_summary.txt")
-View(SPH123_paired.gene_summary)
-SPH123_paired.sgRNA_summary <- read.delim("/media/Coco/MOSAIC LIVER/Experiments/Screen1/Fastqs/MAGECK/Bam_files/SPH123_paired.sgrna_summary.txt")
-View(SPH123_paired.sgRNA_summary)
-
-# Run FluteRRA with both gene summary file and sgRNA summary file
-FluteRRA(SPH123_paired.gene_summary, SPH123_paired.sgRNA_summary, proj="SPH", organism="mmu", outdir = "./")
-#Error in download.file(entrezfile, tmpfile, quiet = TRUE) : cannot open URL 'ftp://ftp.ensembl.org/pub/release-109/xml/tsv/mus_musculus/Mus_musculus.GRCm38.109/xml.entrez.tsv.gz'
-
 gdata = ReadRRA(SPH123_paired.gene_summary)
-View(gdata)
-gdata<- gdata[-which(gdata$id =="ctrl"),]
-
-sdata = ReadsgRRA(SPH123_paired.sgRNA_summary)
-View(sdata)
-sgRankView(sdata, gene = c("Psen1","Nrp2",  "Plxnb2", "Gpc4", "App", "Saa1"))+ggsave("/media/Coco/MOSAIC LIVER/Manuscript/Graphs/sgRNAplot.pdf", width = 5, height = 4)
-
-
 gdata$LogFDR = -log10(gdata$FDR)
 ScatterView(gdata, x = "Score", y = "LogFDR", label = "id", 
                  model = "volcano", top = 10, y_cut=0.25, x_cut = 0.05)
 VolcanoView(gdata, x = "Score", y = "FDR", Label = "id", top = 2, x_cut = 0.05, y_cut = 0.8, alpha=1)+
-theme_classic() + scale_fill_manual(values=c('#81C341', "grey", '#D12026'))+ ylim(0,3)+ xlim(-2,2) #+
-# ggsave("/media/Coco/MOSAIC LIVER/Manuscript/Graphs/Volcano.pdf", width = 5, height = 4)
+theme_classic() + scale_fill_manual(values=c('#81C341', "grey", '#D12026'))+ ylim(0,3)+ xlim(-2,2) +
+ggsave("Volcano.pdf", width = 5, height = 4)
 
-gdata$Rank = rank(gdata$Score)
-ScatterView(gdata, x = "Rank", y = "Score", label = "id", 
-            top = 15, auto_cut_y = TRUE, ylab = "Log2FC", 
-            groups = c("top", "bottom"), max.overlaps = Inf)
-
-View(gdata)
-plot_data<- gdata
-plot_data$group <- ifelse(plot_data$Score < 0, "neg", "pos")
-View(plot_data)
-neg <- plot_data %>% top_n(n = -15, wt = Score)
-neg
-pos <- plot_data %>% top_n(n = 15, wt = Score)
-pos
-reduced_plot_data <- rbind(neg, pos)
-reduced_plot_data
-
-ggplot(data=reduced_plot_data, aes(x=reorder(id, Score),y= Score,  fill=group)) +
-  geom_bar(stat="identity")+
-  theme_classic() + scale_fill_manual(values=c('#81C341','#D12026'))+ coord_flip()#+
-  #ggsave("/media/Coco/MOSAIC LIVER/Manuscript/Graphs/SPH123.pdf", width = 5, height = 4)
