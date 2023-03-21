@@ -1,23 +1,28 @@
 ## ANALYSIS PIPELINE
 
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
+
 #1. DEMULTIPLEXING FASTQS WITH Bcl2Fastq (Illumina), each sample has a unique barcode in the P7 primer. 
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #2. TRIMMING with cutadapt > cutadapt loop
+
 cutadapt -g CACCG -o B11_trimup.fastq ../demux_fastqs/B11_merged.fastq.gz
 cutadapt -a GTTTT -o B11_trimmed.fastq B11_trimup.fastq
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #3. ALIGNMENT with Bowtie2
+
 awk -F ',' '{print ">"$1"\n"$2}' library2.csv > library2.fa #build bowtie index 
 bowtie2-build library2.fa bowtie2_ind_library
 bowtie2 -x bowtie2_ind_library -U ../cutadapt_output/B11_trimmed.fastq --norc | samtools view -bS - > B11.bam
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #4. LIBRARY RETENTION: calculate correlation between plasmid prep and post injection library (fig 1)
+
 mageck count -l library2.csv -n premets_SPH1 --sample-label "premets,SPH1" --fastq 3071.bam SPH1.bam --norm-method total
 
 premets_SPH1.count_normalized <- read.delim("premets_SPH1.count_normalized.txt")
@@ -31,7 +36,7 @@ ggscatter(premets_SPH1.count_normalized, x = "preinj", y = "plasmid",
           xlab = "sgRNA count hepatocytes", ylab = "sgRNA count plasmid")+
           ggsave("plasmid_preinj.pdf", width = 5, height = 5)
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #5. LIBRARY STATS
 
@@ -89,7 +94,7 @@ colnames(SPH1_2_3_counts) <- c( "sgRNA" ,"Gene", "SPH1", "SPH2", "SPH3")
 
 View(SPH1_2_3_counts)
 
-#check correlation
+#correlation
 library("ggpubr")
 a <- ggscatter(SPH1_2_3_counts, x = "SPH1", y = "SPH2", 
                add = "reg.line", conf.int = TRUE, conf.int.level = 0.95, color = "black",
@@ -110,9 +115,10 @@ c <- ggscatter(SPH1_2_3_counts, x = "SPH2", y = "SPH3",
                xlab = "HI2_counts", ylab = "HI3_counts")#+ggsave("plasmid_preinj.pdf", width = 5, height = 5)
 ggarrange(a,b,c,ncol = 3, nrow = 1) +ggsave("plasmid_SPH123.pdf", width = 10, height = 3)
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #6. COVERAGE plot sup fig 3
+
 Coverageplot <- read.csv("Coverageplot.csv")
 View(Coverageplot)
 
@@ -121,7 +127,7 @@ ggplot(data=Coverageplot, aes(x=Sample, y=Total, fill=library)) +
   theme_classic() + scale_fill_manual(values=c('#81C341','#818641', "#2F8641"))+
   scale_x_discrete(guide = guide_axis(angle = 45))  +ggsave("coverage.pdf", width = 4, height = 3)
  
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #7. ANALYSIS OF EACH MOUSE INDIVIDUALLY, use mageck to count and to perform robust rank aggregation test
 
@@ -193,7 +199,7 @@ mageck test -k 3431.count_normalized.txt -t proximal -c distal -n 3431
 `3431.gene_summary` <- read.delim("3431.gene_summary.txt")
 View(`3431.gene_summary`)
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #8. PAIRED ANALYSIS OF EACH LIBRARY BATCH  (sup fig 3)
 
@@ -284,7 +290,7 @@ VolcanoView(gdata3, x = "Score", y = "FDR", Label = "id", x_cut = 0.05, y_cut = 
   ggsave("/media/Coco/MOSAIC LIVER/Manuscript/Graphs/VolcanoSPH3_paired.pdf", width = 5, height = 4)
 
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #8. PAIRED ANALYSIS OF ALL MICE AND BATCHES (fig 3)
 
@@ -404,7 +410,7 @@ ggplot(BP %>% filter(abs(NES)>1) %>% head(n= 20), aes(reorder(pathway, NES), NES
   ggsave("SPH123_allpaired_GOBP.pdf", width = 10, height = 4)
 
 
-#---------------------------––--#
+#---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
 #9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES (sup fig 3) 
 #As number of mice is not the same, cannot compare with paired analysis > first sum all mice per batches, then paired analysis 
