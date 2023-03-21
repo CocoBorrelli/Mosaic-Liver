@@ -1,9 +1,19 @@
 ### This code by Atefeh Lafzi is used to identify tumor-hepatocyte interactions at the metastatic leading edge
 
-#load 2 replicates of huma CRC hepatic metastasis
+#load 2 replicates of huma CRC hepatic metastasis, spots are deconvoluted based on published scRNAseq datasets
 load("Met1_seuratObj_V2.RData")
 load("Met1rep_seuratObj_V2.RData")
-FeatureOverlay(Met1, features = "seurat_predicted.id", sampleids = 1, ncols.samples = 1, dark.theme = T)
+SpatialDimPlot(Met1, label = TRUE, label.size = 3, group.by = "seurat_predicted.id")
+SpatialDimPlot(Met1.rep, label = TRUE, label.size = 3, group.by = "seurat_predicted.id")
+
+#select edge spots > follow instructions in the terminal to select points
+cells.located <- CellSelector(plot = plot)
+cells.located
+DimPlot(Met1, reduction = "umap", label = TRUE)
+CellSelector(plot = p1)
+
+# Automatically set the identity class of selected cells and return a new Seurat object
+Met1 <- CellSelector(plot = plot, object = Met1, ident = 'SelectedCells')
 
 #STUtility
 library(STutility)
@@ -58,14 +68,13 @@ FeatureOverlay(Met1.rep.STU, features = "Hepa_tumor_iner_edge", cols = c("green"
 
 library(magrittr)
 library(dplyr)
-
 Met1.rep.STU <- SetIdent(Met1.rep.STU, value = "Hepa_tumor_iner_edge")
 #Met1.rep.STU@assays$RNA@scale.data <- Met1.rep@assays$SCT@scale.data
 #Met1.rep.STU@assays$RNA@scale.data <- as.matrix(Met1.rep.STU@assays$RNA@scale.data)
 hepato.edge.central.markers.Met1.rep <- FindMarkers(Met1.rep.STU, ident.1 = "Hepatocyte_TumorNeighbour", ident.2 = "Hepatocyte_central")
 Tumor.edge.central.markers.Met1.rep <- FindMarkers(Met1.rep.STU, ident.1 = "Tumor_HepatoNeighbour", ident.2 = "Tumor_central")
-save(hepato.edge.central.markers.Met1.rep,file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/DEGs_HepatoNeighbouringTumor_VS_HepatoCentral_Met1rep_V2.RData")
-save(Tumor.edge.central.markers.Met1.rep,file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/DEGs_TumorNeighbouringHepato_VS_TumorCentral_Met1rep_V2.RData")
+save(hepato.edge.central.markers.Met1.rep,file="DEGs_HepatoNeighbouringTumor_VS_HepatoCentral_Met1rep_V2.RData")
+save(Tumor.edge.central.markers.Met1.rep,file="DEGs_TumorNeighbouringHepato_VS_TumorCentral_Met1rep_V2.RData")
 #hepato.edge.vs.central.DEGs <- hepato.edge.central.markers$gene
 #Tumor.edge.vs.central.DEGs <- Tumor.edge.central.markers$gene
 #save(hepato.edge.vs.central.DEGs,file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/DEGs_HepatoNeighbouringTumor_VS_HepatoCentral_genes.RData")
@@ -93,14 +102,14 @@ Idents(Met1.rep.nichenet) <- "Hepa_tumor_iner_edge"
 Met1.rep.nichenet <- RunPCA(Met1.rep.nichenet, verbose = FALSE)  %>% RunUMAP(dims = 1:30)
 DimPlot(Met1.rep.nichenet, reduction = "umap")
 
-ligand_target_matrix = readRDS("/Users/ati/Documents/Projects/Visium/colorectal_cancer/nichenet/ligand_target_matrix.rds")
+ligand_target_matrix = readRDS("ligand_target_matrix.rds")
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 dim(ligand_target_matrix)
 
 expression = t(as.matrix(Met1.rep.nichenet@assays$RNA@counts))
 sample_info = Met1.rep.nichenet@meta.data
 
-# we wanna check between Hepatocytes: sender, and Tumor: reciever
+#Hepatocytes: sender, and Tumor: reciever
 Hepato_ids = rownames(sample_info[which(sample_info$Hepa_tumor_iner_edge == "Hepatocyte_TumorNeighbour"),])
 Tumor_ids = rownames(sample_info[which(sample_info$Hepa_tumor_iner_edge == "Tumor_HepatoNeighbour"),])
 
@@ -109,9 +118,8 @@ expressed_genes_receiver = colnames(expression[Tumor_ids,])[which(colSums2(expre
 length(expressed_genes_sender)
 length(expressed_genes_receiver)
 
-#Step 2: Define the gene set of interest and a background of genes
+#define the gene set of interest and a background of genes
 #genes of which the expression is possibly affected due to communication with other cells.
-#Now are you interested in hepato genes or Tumor genes? Upregulated ones or downregulated ones or all
 geneset_oi = rownames(Tumor.edge.central.markers)#[which(hepato.edge.central.markers$avg_log2FC > 0),])
 background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 head(background_expressed_genes)
@@ -119,7 +127,7 @@ length(geneset_oi)
 length(background_expressed_genes)
 length(intersect(geneset_oi, background_expressed_genes))
 
-#Step 3: Define a set of potential ligands
+#Define a set of potential ligands
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_sender)
@@ -129,13 +137,12 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
 lr_network_expressed = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) 
 head(lr_network_expressed)
-save(lr_network_expressed, file= "/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Hepato_Tumor_all_expressed_ligandReceptorNetwork_NoFiltering.RData")
+save(lr_network_expressed, file= "Hepato_Tumor_all_expressed_ligandReceptorNetwork_NoFiltering.RData")
 potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
 head(potential_ligands)
 
-#Now perform the ligand activity analysis: in this analysis, we will calculate the ligand activity of each ligand, or
+#ligand activity analysis: in this analysis, we will calculate the ligand activity of each ligand, or
 # in other words, we will assess how well each Hepato-ligand can predict the Tumor gene set compared to the background of expressed genes 
-#(predict whether a gene belongs to the Tumor program or not).
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ligand_activities %>% arrange(-pearson)
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
@@ -144,21 +151,19 @@ head(best_upstream_ligands)
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
 
 nrow(active_ligand_target_links_df)
-## [1] 143
 head(active_ligand_target_links_df)
 
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
 
 nrow(active_ligand_target_links_df)
-## [1] 143
 head(active_ligand_target_links_df)
 
 order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev()
 order_targets = active_ligand_target_links_df$target %>% unique()
 vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-save(ligand_activities, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Hepato_Tumor_active_ligand_activities_weighted_all_V2.RData")
-save(active_ligand_target_links_df, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Hepato_Tumor_active_ligand_target_links_df_V2.RData")
-save(vis_ligand_target, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Hepato_Tumor_vis_ligand_target_V2.RData")
+save(ligand_activities, file="Hepato_Tumor_active_ligand_activities_weighted_all_V2.RData")
+save(active_ligand_target_links_df, file="Hepato_Tumor_active_ligand_target_links_df_V2.RData")
+save(vis_ligand_target, file="Hepato_Tumor_vis_ligand_target_V2.RData")
 
 p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized Hepatocytes-ligands","Tumor_Tumor genes in Metastatic cells", color = "red",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01)) + theme(axis.text.x = element_text(face = "italic"))
 
@@ -168,7 +173,6 @@ p_ligand_target_network +theme(text = element_text(size=15, face = "bold"),axis.
 
 
 ##Nichenet on opposite interaction: Tumor as sender and Hepato as Reciever
-# we wanna check between Hepatocytes: reciever, and Tumor: sender
 Hepato_ids = rownames(sample_info[which(sample_info$Hepa_tumor_iner_edge == "Hepatocyte_TumorNeighbour"),])
 Tumor_ids = rownames(sample_info[which(sample_info$Hepa_tumor_iner_edge == "Tumor_HepatoNeighbour"),])
 
@@ -177,9 +181,7 @@ expressed_genes_receiver = colnames(expression[Hepato_ids,])[which(colSums2(expr
 length(expressed_genes_sender)
 length(expressed_genes_receiver)
 
-#Step 2: Define the gene set of interest and a background of genes
-#genes of which the expression is possibly affected due to communication with other cells.
-#Now are you interested in hepato genes or Tumor genes? Upregulated ones or downregulated ones or all
+#define the gene set of interest and a background of genes
 geneset_oi = rownames(hepato.edge.central.markers)#[which(hepato.edge.central.markers$avg_log2FC > 0),])
 background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 head(background_expressed_genes)
@@ -187,7 +189,7 @@ length(geneset_oi)
 length(background_expressed_genes)
 length(intersect(geneset_oi, background_expressed_genes))
 
-#Step 3: Define a set of potential ligands
+#define a set of potential ligands
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_sender)
@@ -197,13 +199,11 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
 lr_network_expressed = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) 
 head(lr_network_expressed)
-save(lr_network_expressed, file= "/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Tumor_Hepato_all_expressed_ligandReceptorNetwork.RData")
+save(lr_network_expressed, file= "Tumor_Hepato_all_expressed_ligandReceptorNetwork.RData")
 potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
 head(potential_ligands)
 
-#Now perform the ligand activity analysis: in this analysis, we will calculate the ligand activity of each ligand, or
-# in other words, we will assess how well each Hepato-ligand can predict the Tumor gene set compared to the background of expressed genes 
-#(predict whether a gene belongs to the Tumor program or not).
+#ligand activity analysis
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ligand_activities %>% arrange(-pearson)
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
@@ -212,21 +212,19 @@ head(best_upstream_ligands)
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
 
 nrow(active_ligand_target_links_df)
-## [1] 143
 head(active_ligand_target_links_df)
 
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
 
 nrow(active_ligand_target_links_df)
-## [1] 143
 head(active_ligand_target_links_df)
 
 order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev()
 order_targets = active_ligand_target_links_df$target %>% unique()
 vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-save(ligand_activities, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Tumor_Hepato_Tumor_active_ligand_activities_weighted_all_V2.RData")
-save(active_ligand_target_links_df, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Tumor_Hepato_active_ligand_target_links_df_V2.RData")
-save(vis_ligand_target, file="/Users/ati/Documents/Projects/Visium/colorectal_cancer/coco/Tumor_Hepato_vis_ligand_target_V2.RData")
+save(ligand_activities, file="Tumor_Hepato_Tumor_active_ligand_activities_weighted_all_V2.RData")
+save(active_ligand_target_links_df, file="Tumor_Hepato_active_ligand_target_links_df_V2.RData")
+save(vis_ligand_target, file="Tumor_Hepato_vis_ligand_target_V2.RData")
 
 p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized Tumor-ligands","Hepatocytes genes in Metastatic cells", color = "red",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01)) + theme(axis.text.x = element_text(face = "italic"))
 
