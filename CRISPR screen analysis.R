@@ -8,8 +8,8 @@
 
 #2. TRIMMING with cutadapt > cutadapt loop
 
-cutadapt -g CACCG -o B11_trimup.fastq ../demux_fastqs/B11_merged.fastq.gz
-cutadapt -a GTTTT -o B11_trimmed.fastq B11_trimup.fastq
+cutadapt -g CACCG -o sampleX_trimup.fastq ../demux_fastqs/sampleX_merged.fastq.gz
+cutadapt -a GTTTT -o sampleX_trimmed.fastq sampleX_trimup.fastq
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
@@ -17,7 +17,7 @@ cutadapt -a GTTTT -o B11_trimmed.fastq B11_trimup.fastq
 
 awk -F ',' '{print ">"$1"\n"$2}' library2.csv > library2.fa #build bowtie index 
 bowtie2-build library2.fa bowtie2_ind_library
-bowtie2 -x bowtie2_ind_library -U ../cutadapt_output/B11_trimmed.fastq --norc | samtools view -bS - > B11.bam
+bowtie2 -x bowtie2_ind_library -U ../cutadapt_output/sampleX_trimmed.fastq --norc | samtools view -bS - > sampleX.bam
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
