@@ -406,7 +406,7 @@ ggplot(BP %>% filter(abs(NES)>1) %>% head(n= 20), aes(reorder(pathway, NES), NES
 
 #---------------------------––--#
 
-#9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES. 
+#9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES (sup fig 3) 
 #As number of mice is not the same, cannot compare with paired analysis > first sum all mice per batches, then paired analysis 
 
 #sum all no Cre mice for SPH1, 2 and 3
