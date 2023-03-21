@@ -1,11 +1,12 @@
-library(STutility)
+### This code by Atefeh Lafzi is used to identify tumor-hepatocyte interactions at the metastatic leading edge
 
+#load 2 replicates of huma CRC hepatic metastasis
 load("Met1_seuratObj_V2.RData")
 load("Met1rep_seuratObj_V2.RData")
 FeatureOverlay(Met1, features = "seurat_predicted.id", sampleids = 1, ncols.samples = 1, dark.theme = T)
 
-
 #STUtility
+library(STutility)
 infoTable <- data.frame(samples=NA, spotfiles=NA, imgs=NA, json=NA, condition=NA)
 infoTable <- rbind(infoTable, data.frame(samples="B1_FRB33CB70_Met/outs/filtered_feature_bc_matrix.h5", 
                                          spotfiles="B1_FRB33CB70_Met/outs/spatial/tissue_positions_list.csv", 
