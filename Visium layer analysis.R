@@ -349,5 +349,70 @@ ST.FeaturePlot(object = se6M1_3, features = "Mets_layer", pt.size = 3, ncol = 2)
 ### save objects with layers 
 saveRDS(se6M1_3,"./se6M1_3_layers.Rds")
 
+###load R objects 
+#layers of distance from metastasis are stored in seurat_object$Mets_layer (layer by layer, layer 0 = witin metastasis, layer 1 = first layer after metastasis, ...)
+se6M1_3 <- readRDS("/media/Coco/MOSAIC LIVER/Experiments/Visium/Visium_Kristina/se6M1_3_layers.Rds")
+SpatialDimPlot(se6M1_3$Mets_layer)
+ST.FeaturePlot(object = se6M1_3, features = "Mets_layer", pt.size = 3, ncol = 2)
+Idents(se6M1_3) <- "Mets_layer"
+VlnPlot(se6M1_3, features = "App", pt.size=0, log=T)
+VlnPlot(se6M1_3, features = "Saa1", pt.size=0, log=T)
+
+#seurat_object$Mets_zone2 combines layers into three zones (mets = within mets, layer 1 = within 3 spots away from mets, rest is layer 2)
+ST.FeaturePlot(object = se6M1_3, features = "Mets_zone2", pt.size = 3, ncol = 2)
+
+#visualize genes of interest in an VlnPlot from differnet zones 
+Idents(se6M1_3) <- "Mets_zone2"
+VlnPlot(se6M1_3, features = "App")
+VlnPlot(se6M1_3, features = "Saa1")
+
+
+#set colors
+colfunc <- colorRampPalette(c("#D12429", "#82C341"))
+colors <- colfunc(18)
+
+# Define an order of cluster identities
+my_levels <- c("layer0", "layer1", "layer2", "layer3", "layer4",
+               "layer5", "layer6", "layer7","layer8", "layer9", 
+               "layer10", "layer11", "layer12", "layer13", "layer14",
+               "layer15", "layer16", "layer17")
+
+# Relevel object@ident
+se6M1_3$Mets_layer <- factor(x = se6M1_3$Mets_layer, levels = my_levels)
+Idents(se6M1_3) <- "Mets_layer"
+
+FeatureOverlay(object = se6M1_3, features = "Mets_layer") +ggsave("/mets_layers_visium6M1.pdf", width = 8, height =8)
+FeatureOverlay(se6M1_3, features = c("App", "Saa1", "Plxnb2", "Psen1"), 
+               sampleids = 1,
+               cols = c("lightgray", "mistyrose", "red", "darkred", "black"),
+               pt.size = 3, 
+               add.alpha = F,
+               ncol = 4) +ggsave("visiumgenes.pdf", width = 32, height =8)
+
+a <- VlnPlot(se6M1_3, features = "App", pt.size=0, log=T)+ theme(legend.position="none")
+b <- VlnPlot(se6M1_3, features = "Saa1", pt.size=0, log=F)+ theme(legend.position="none")
+c <- VlnPlot(se6M1_3, features = "Plxnb2", pt.size=0, log=F)+ theme(legend.position="none")
+d <- VlnPlot(se6M1_3, features = "Psen1", pt.size=0, log=F)+ theme(legend.position="none")
+ggarrange(a,b,c,d, ncol=2, nrow=2)+ggsave("mets_layers_visium.pdf", width = 12, height =20)
+
+#check expression of genes across samples (se6M1 and se4M1 have mets, se6M3 doesn't)
+se6M1$sample <- "AKPS_1"
+se4M1$sample <- "AKPS_2"
+se6M3$sample <- "no_mets"
+
+se.merged <- MergeSTData(se6M1, c(se6M3,se4M1))
+se.merged <- SCTransform(se.merged)
+VlnPlot(se.merged, features = c("Saa1", "App", "Psen1", "Plxnb2"),ncol=2, group.by = "sample", pt.size=0, log=T)
+VlnPlot(se.merged, features = c("Saa1"),ncol=2, group.by = "sample", pt.size=0, log=T)+ggsave("Saa1_visium.pdf", width = 5, height =5)
+
+se.merged <- AddModuleScore(se.merged, features = "Saa1", name = "Saa1")
+names(x = se.merged[[]])
+
+Idents(se.merged) <- "sample"
+AKPS_1 <- subset(se.merged, idents = c("AKPS_1"))
+AKPS_2 <- subset(se.merged, idents = c("AKPS_2"))
+no_mets <- subset(se.merged, idents = c("no_mets"))
+wilcox.test(AKPS_1$Saa11, no_mets$Saa11, alternative = "two.sided") #p-value < 2.2e-16
+wilcox.test(AKPS_2$Saa11, no_mets$Saa11, alternative = "two.sided") #p-value < 2.2e-16
 
 
