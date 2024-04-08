@@ -1,5 +1,20 @@
-#Code by Elena Guido Vinzoni to identy LR interactions between screening hits and frequenctly mutated LRs in hepatic metastases
-#The code below exemplifies the workflow using the CellTalk database, the NicheNet and CellPhone DB databases were queried in the same way.
+#Code by Elena Guido Vinzoni to identify LR interactions between screening hits and frequenctly mutated LRs in hepatic metastases
+#The code below exemplifies the workflow using the CellTalk database: 
+
+#1. extracting interactors of screening hits quering the CellTalk database (the NicheNet and CellPhone DB databases were queried in the same way)
+#The code focuses first on the proximal hits, identifying ligands and receptors within these hits and their interactors.
+# Interactors and their frequency are saved in Excel files.
+# The same process is repeated for distal top 60 hits.
+
+#2. intersecting with mutational data from Nguyen et al (s4bliver_unique)
+# Following the extraction of LR interactions, the code intersects the results with mutational data from Nguyen et al.
+# Mutated genes are extracted and compared with LR interactors.
+# Exact matches are found, and the results are saved in Excel files, separately for proximal and distal LR interactions.
+
+# Finally, for each proximal and distal LR interaction, the code identifies gene amplifications and deletions.
+# The results are saved in Excel files for further analysis and visualization.
+
+#results from the analyses with Celltalk DB, Cellphone DB and NicheNet were then manually merged and plotted in R using the ggalluvial package to generate Fig 1h
 
 #######EXTRACTING INTERACTORS OF SCREENING HITS FROM CELLTALK DB##########
 library(openxlsx)
@@ -109,8 +124,7 @@ saveWorkbook(wb, "CellTalkDB_interactors_top60dist.xlsx", overwrite = TRUE)
 
 
 #######INTERSECTION WITH MUTATIONAL DATA########
-
-#find intersect between screen-targets-interactors and mutational data from nguyen (s4bliver_unique)
+#find intersect between screen-targets-interactors and mutational data from Nguyen et al (s4bliver_unique)
 mutations <- read.xlsx("Nguyen_sb4_liver_unique_1.xlsx")
 
 #Distal
@@ -159,6 +173,9 @@ for (gene in matching_genes$exact_matches) {
 matched_df <- as.data.frame(mutations[mutations$s4bliver_unique %in% matched_entries, ])
 colnames(matched_df) <- "gene_name"
 
+
+
+######CHECK WHICH GENES WERE AMPLIFIED AND WHICH DELETED#######
 #now that we got all the entries in s4b that correspond to LRs of the targets we can divide them in amp and dels
 # Use grep to filter entries ending with "_Amplification"
 amplification_entries <- grep("^(.*?)_Amplification", matched_df$gene_name, value = TRUE)
@@ -230,19 +247,3 @@ writeData(wb, sheet = 1, x = amp_df, startCol = "D", startRow = 1)
 
 # Save the workbook to an Excel file
 saveWorkbook(wb, "matched_s4b_top60dist.xlsx", overwrite = TRUE)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
