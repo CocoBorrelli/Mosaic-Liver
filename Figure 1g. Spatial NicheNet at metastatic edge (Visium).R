@@ -209,30 +209,7 @@ head(lr_network_expressed)
 save(lr_network_expressed, file= "Hepato_Tumor_all_expressed_ligandReceptorNetwork_NoFiltering.RData")
 
 
-
-###########CALCULATE INTERSECTION WITH SCREENING HITS (TOP AND BOTTOM DECILE)###########
-library(MAGeCKFlute)
-
-#load screening results
-SPH123_paired.gene_summary <- read.delim("/media/Coco/MOSAIC LIVER/Experiments/Screen1/Fastqs/MAGECK/Bam_files/SPH123_paired.gene_summary.txt")
-gdata = ReadRRA(SPH123_paired.gene_summary)
-View(gdata)
-
-#calculate top and bottom deciles (top-scoring hits)
-quantile(gdata$Score, probs = seq(0, 1, 1/10))
-nrow(gdata)
-topdecile <- which(gdata$Score > 0.18)
-bottomdecile <- which(gdata$Score < -0.19)
-topscoringhits <- gdata[c(topdecile, bottomdecile),]
-View(topscoringhits)
-write.csv(topscoringhits, file="topscoringhits.csv")
-
-overlap <- intersect(toupper(Score$id), lr_network_expressed$from)
-overlap
-
-
-##############LIGAND ACTIVITY ANALYSIS WITH NICHENET (Extended Data Fig 2g)###############
-#calculate the ligand activity of each ligand to assess how well each 
+#Ligand activity analysis (Extended Data Fig 2g): calculate the ligand activity of each ligand to assess how well each 
 #Hepatocyte-derived LR can predict the tumor edge gene set compared to the background of expressed genes 
 # Extract potential ligands and calculate ligand activities
 potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
@@ -262,5 +239,47 @@ save(vis_ligand_target, file="Hepato_Tumor_vis_ligand_target_V2.RData")
 p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized Hepatocytes-ligands","Tumor_Tumor genes in Metastatic spots", color = "red",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential") + 
                                                   scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01)) + theme(axis.text.x = element_text(face = "italic"))
 p_ligand_target_network +theme(text = element_text(size=15, face = "bold"),axis.text.x = element_text(size=15,face="bold"))
+
+
+###########CALCULATE INTERSECTION WITH SCREENING HITS (Figure 1g) ###########
+#This code segment intersects the top scoring hits of the screen with ligands having predicted activity,
+#extracts corresponding rows from the ligand-receptor network, and generates a chord plot displaying the connections between ligands and receptors.
+
+library(MAGeCKFlute)
+
+#load screening results
+SPH123_paired.gene_summary <- read.delim("/media/Coco/MOSAIC LIVER/Experiments/Screen1/Fastqs/MAGECK/Bam_files/SPH123_paired.gene_summary.txt")
+gdata = ReadRRA(SPH123_paired.gene_summary)
+View(gdata)
+
+#calculate top and bottom deciles (top-scoring hits)
+quantile(gdata$Score, probs = seq(0, 1, 1/10))
+nrow(gdata)
+topdecile <- which(gdata$Score > 0.18)
+bottomdecile <- which(gdata$Score < -0.19)
+topscoringhits <- gdata[c(topdecile, bottomdecile),]
+View(topscoringhits)
+write.csv(topscoringhits, file="topscoringhits.csv")
+
+#intersect top scoring hits of screen with LRs with predicted activity 
+ligand_activities #109
+overlap_active <- intersect(toupper(topscoringhits$id), ligand_activities$test_ligand)
+overlap_active
+[1] "PLXNB2"  "NECTIN2" "PSAP"    "APOE"    "MANF"    "NENF"    "FGA"     "PSEN1"   "APP"     "VTN"    
+[11] "LTB"     "SAA1"    "HAMP"    "FAT1"    "HSPG2"   "GDF15"   "A2M"     "EFNA1"   "COL18A1" "PCDH1"  
+[21] "BMP4"    "LIF"
+
+# Extract rows from the ligand-receptor network containing overlapping active ligands
+overlap_links_rows<-which(lr_network_expressed$from %in% overlap_active)
+overlap_links <- lr_network_expressed[overlap_links_rows,]
+View(overlap_links)
+circos_links = overlap_links
+
+#make chord plot 
+library(circlize)
+circos.par(gap.degree = gaps)
+pdf(file="circos_plot.pdf",  width=4, height=4)
+chordDiagram(circos_links, annotationTrack = c("name","grid"))
+dev.off()
 
 
