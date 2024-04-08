@@ -24,7 +24,7 @@ bowtie2 -x bowtie2_ind_library -U ../cutadapt_output/sampleX_trimmed.fastq --nor
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#4. LIBRARY RETENTION: calculate correlation between plasmid prep and post injection library (fig 1)
+#4. LIBRARY RETENTION: calculate correlation between plasmid prep and post injection library (Extended Data Fig 1)
 
 mageck count -l library2.csv -n premets_SPH1 --sample-label "premets,SPH1" --fastq 3071.bam SPH1.bam --norm-method total
 
@@ -41,7 +41,7 @@ ggscatter(premets_SPH1.count_normalized, x = "preinj", y = "plasmid",
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#5. LIBRARY STATS
+#5. LIBRARY STATS (Extended Data Fig 1)
 
 #count all Cre samples to get stats in countsummary
 mageck count -l library2.csv -n SPH_sum --sample-label "distal,proximal" --fastq 3174distal.bam,3068distal.bam,3039distal.bam,3379distal.bam,3425distal.bam,3434distal.bam,3436proximal.bam 3174proximal.bam,3068proximal.bam,3039proximal.bam,3379proximal.bam,3425proximal.bam,3434proximal.bam,3436distal.bam  
@@ -120,7 +120,7 @@ ggarrange(a,b,c,ncol = 3, nrow = 1) +ggsave("plasmid_SPH123.pdf", width = 10, he
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#6. COVERAGE plot sup fig 3
+#6. COVERAGE (Extended Data Fig 1)
 
 Coverageplot <- read.csv("Coverageplot.csv")
 View(Coverageplot)
@@ -204,7 +204,7 @@ View(`3431.gene_summary`)
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#8. PAIRED ANALYSIS OF EACH LIBRARY BATCH  (sup fig 3)
+#8. PAIRED ANALYSIS OF EACH LIBRARY BATCH (Extended Data Fig 1)
 
 #SPH1
 `3068.count_normalized` <- read.delim("3068.count_normalized.txt")
@@ -295,7 +295,7 @@ VolcanoView(gdata3, x = "Score", y = "FDR", Label = "id", x_cut = 0.05, y_cut = 
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#8. PAIRED ANALYSIS OF ALL MICE AND BATCHES (fig 3)
+#8. PAIRED ANALYSIS OF ALL MICE AND BATCHES (Fig 1)
 
 SPH1_2_3 <- list(`3174.count_normalized` ,`3068.count_normalized`, `3039.count_normalized`, 
                  `3379.count_normalized`, `3425.count_normalized`, `3434.count_normalized`, 
@@ -316,7 +316,7 @@ paired_proximal_distal.sgrna_summary <- read.delim("paired_proximal_distal.sgrna
 sdata = ReadsgRRA(paired_proximal_distal.sgrna_summary)
 View(sdata)
 sgRankView(sdata)
-sgRankView(sdata, gene = c("Psen1","Nrp2",  "Plxnb2", "Ltb", "App", "Saa1"))+ggsave("sgRNAplotpaired.pdf", width = 5, height = 4)
+sgRankView(sdata, gene = c("Psen1","Plxnb2","App", "Saa1"))+ggsave("sgRNAplotpaired.pdf", width = 5, height = 4)
 
 paired_proximal_distal.gene_summary <- read.delim("paired_proximal_distal.gene_summary.txt")
 View(paired_proximal_distal.gene_summary)
@@ -415,7 +415,7 @@ ggplot(BP %>% filter(abs(NES)>1) %>% head(n= 20), aes(reorder(pathway, NES), NES
 
 #---------------------------––-----------------------------––-----------------------------––-----------------------------––-------------------------#
 
-#9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES (sup fig 3) 
+#9. ANALYSIS OF ALBCRE:dCAS9-SPH VS. NOCRE LITTERMATES (Extended Data Fig 1) 
 #As number of mice is not the same, cannot compare with paired analysis > first sum all mice per batches, then paired analysis 
 
 #sum all no Cre mice for SPH1, 2 and 3
