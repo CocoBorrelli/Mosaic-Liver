@@ -7,7 +7,7 @@ Code used in the manuscript "​​​​In vivo screening of tumor-hepatocyte i
 - publicly available genomic and transcriptomic datasets of metastatic CRC (Figure 1 and Extended Data Figure 9) 
 - single-cell RNA sequencing (Figure 3)
 - single-nucleus multiome sequencing (Figure 3)
-- Molecular Cartography (Resolve) data analysis (Extended Data Figures 5 and 10)
+- Molecular Cartography (Resolve) data analysis (Extended Data Figures 5 and 9)
 - bulk RNA sequencing (Extended Data Figures 5, 6, and 8)
 
 Raw data can be found here:
