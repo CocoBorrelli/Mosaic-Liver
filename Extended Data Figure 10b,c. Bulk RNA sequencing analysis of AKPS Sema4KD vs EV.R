@@ -113,32 +113,49 @@ colnames(poolABC)
 all_samples_mat <- as.matrix(poolABC[2:26])
 rownames(all_samples_mat)<- poolABC$Gene
 
-#AKPS
+########## DIFFERENTIAL GENE EXPRESSION TESTING WITH edgeR ###############
+# Subset data to include specific columns containing data from AKPS Sema4KD and AKPS EV control
 AKPS_Sema4_KD <- all_samples_mat[,c(5,11, 13,14, 16, 20)]
 head(AKPS_Sema4_KD)
+
+# Define group factors
 group <- factor(c(2,1,1,2,2,1))
+
+# Create a DGEList object
 y <- DGEList(counts=AKPS_Sema4_KD,group=group)
 y$samples
-# The las argument rotates the axis names
+
+# Create a barplot of library sizes (the las argument rotates the axis names)
 barplot(y$samples$lib.size,names=colnames(y), las=2, main = "Barplot of library sizes")
 
-
-# Filter reads by counts: Most of the samples should have at least 10 reads, normalize the library and estimate dispersion
-#keep <- filterByExpr(y, min.count = 10)
+# Filter reads by counts and normalize the library
 keep <- filterByExpr(y)
 y <- y[keep, , keep.lib.sizes=FALSE]
 y <- calcNormFactors(y)
 y$samples
+
+# Create design matrix
 design <- model.matrix(~group)
+
+# Estimate dispersion
 y <- estimateDisp(y,design)
+
+# Plot MDS
 plotMDS(y)
+
+# Calculate log-transformed counts per million (logCPM)
 logcpm <- cpm(y, log=TRUE)
 View(logcpm)
 
+#fit the model
 design <- model.matrix(~group)
 fit <- glmQLFit(y, design)
+
+# Conduct differential expression analysis
 qlf.2vs1 <- glmQLFTest(fit, coef=2)
 topTags(qlf.2vs1)
+
+# Add gene names to the results table
 qlf.2vs1$table$Gene <- rownames(qlf.2vs1$table)
 View(qlf.2vs1$table)
 
@@ -148,12 +165,42 @@ dim(qlf.2vs1)
 head(qlf.2vs1$table)
 qlf.2vs1$table$Gene <- rownames(qlf.2vs1$table)
 View(qlf.2vs1$table)
-write.csv(qlf.2vs1$table, file = "SEMA_KD.csv")
-DEGs<-qlf.2vs1$table
-DEGs_volcano(DEGs, 0.02, 3, "Sema-KD vs. control", "grey",3.5, 5)# +ggsave("KD vs control AKPS.pdf", width =8,  height=8)
+
+# Extract corrected DEGs using False Discovery Rate (FDR) adjustment
+corrected_DEGs <- na.omit(topTags(qlf_liver, n = Inf, adjust.method = "fdr", sort.by = "PValue", p.value = 1)$table)
+View(corrected_DEGs)
+
+#plot results
+
+#this function generates a volcano plot to visualize differentially expressed genes (DEGs) based on specified thresholds for False Discovery Rate (FDR) and absolute log2 fold change. 
+#It marks DEGs meeting the thresholds as 'Significant' and assigns gene names to them. The volcano plot is customized with colors, labels, axis limits, and title. The function returns the generated volcano plot.
+DEGs_volcano <- function(DEGs, p_treshold, FC_treshold, title, color, upperylim, xlim) {
+  DEGs$Significant <- ifelse((DEGs$FDR < p_treshold & abs(DEGs$logFC) > FC_treshold ), "Significant", "Not Sig")
+  DEGs$gene <- ifelse((DEGs$FDR < p_treshold & abs(DEGs$logFC) > FC_treshold ), rownames(DEGs), NA)
+  
+  plot <-  ggplot(data=DEGs, aes(x=logFC, y=-log10(FDR), fill=factor(Significant), label = DEGs$gene) ) + 
+    theme_bw()+ 
+    theme( panel.grid.major.x = element_blank(),
+           panel.grid.minor.x = element_blank(),
+           panel.grid.major.y = element_blank(),
+           panel.grid.minor.y = element_blank())+
+    geom_point(shape = 21,color=color)+
+    scale_fill_manual(values = c(color, "black")) +
+    geom_text_repel(size=4, max.overlaps = Inf)+
+    xlab("log2 fold change") + ylim(0,upperylim)+xlim(-xlim,xlim)+
+    ylab("-log10(FDR)") +  labs(title = title)+
+    theme(legend.position = "none", text = element_text(size=12),
+          plot.title = element_text(size = rel(1.5), hjust = 0.5),
+          axis.title = element_text(size = rel(1.25)))
+  return(plot)
+}
+
+corrected_DEGs$gene <- rownames(corrected_DEGs)
+DEGs_volcano(corrected_DEGs, 0.02, 3, "Sema-KD vs. control", "grey",3.5, 5) +ggsave("KD vs control AKPS.pdf", width =8,  height=8)
 
 
 ##############GENE SET ENRICHMENT ANALYSIS###############
+#import dataset
 msigdbr_species()
 m_df<- msigdbr(species = "Mus musculus", category = "C5", subcategory = "BP")
 BP <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
@@ -162,7 +209,6 @@ head(BP)
 #This function performs preranked gene set enrichment analysis (GSEA) using precomputed gene ranks for biological processes (BP).
 #The function calculates rankings based on the log fold change (logFC), then uses these rankings to perform GSEA. It returns a dataframe containing 
 #the results of preranked GSEA for biological processes, with modified pathway names for readability.
-
 preranked_BP <- function(x) {
   ranks <- x %>% 
     na.omit()%>%
