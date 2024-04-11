@@ -118,7 +118,7 @@ metalines <- all_samples_mat[, c( 2, 10, 25, 22, 23)]
 head(metalines)
 
 
-
+######### DIFFERENTIAL GENE EXPRESSION ANALYSIS WITH edgeR ##########
 #Create DGEList object
 group <- factor(c(1, 1, 1, 2, 2))
 y <- DGEList(counts=metalines,group=group)
