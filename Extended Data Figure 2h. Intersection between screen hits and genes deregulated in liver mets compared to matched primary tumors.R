@@ -1,3 +1,17 @@
+#This script identifies potential interactions between screen hits and differentially expressed between liver mets and primary tumors by:
+
+#Data Preprocessing: It loads scRNA-seq datasets from Che et al and Wang et al. Then, it preprocesses the data using Seurat, 
+#including steps like filtering cells based on quality control metrics, normalization, dimensionality reduction, clustering, and UMAP visualization.
+
+#Differential Expression Analysis: After identifying epithelial cells, it performs DEA between liver metastases and primary CRC tumors for both datasets 
+#using the FindMarkers function in Seurat. It saves the results to CSV files.
+
+#Querying External Databases: It queries several external databases (CellPhoneDB, CellTalkDB, NicheNet) to find interactors of differentially expressed genes (DEGs). 
+#It then processes and merges the results from these databases.
+
+#Intersecting Results: It intersects the results obtained from querying the external databases with top scoring hits of the screen to identify potential interactions.
+
+
 ####### CALCULATE DEREGULATED GENES BETWEEN LIVER METS AND MATCHED PRIMARY CRC TUMORS IN TWO INDEPENDENT DATASETS ######
 library(dplyr)
 library(Seurat)
