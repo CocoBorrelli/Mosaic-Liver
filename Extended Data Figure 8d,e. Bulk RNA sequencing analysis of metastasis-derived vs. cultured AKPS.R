@@ -1,4 +1,4 @@
-#Code for the analysis of bulk RNA sequencing data of AKPS Sema4KD (quadruple sempahorin shRNA) vs emppty vector controls
+#Code for the analysis of bulk RNA sequencing data of AKPS organoids in culture vs metastasis-derived lines
 
 #load packages
 library(rlang)
