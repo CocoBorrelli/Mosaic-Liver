@@ -85,32 +85,29 @@ Idents(AKPS_sub) <- "orig.ident"
 DimPlot(AKPS_sub, reduction = "umap", group.by = "orig.ident", cols=met.brewer("Egypt", 2)) + ggsave("Sampledimplot.pdf", width =6,  height=5)
 
 ####COMPOSITIONAL ANALYSIS####
-#frequencies per cluster
-numberofcells         <- table(AKPS_sub$orig.ident, AKPS_sub$seurat_clusters)
-numberofcells
-totalcellssample   <- c(sum(numberofcells[1,]), sum(numberofcells[2,]))
-a                     <- cbind(numberofcells,totalcellssample)
-a
-totalcellspercluster  <- c(sum(a[,1]), sum(a[,2]), sum(a[,3]), sum(a[,4]))
-b                     <- rbind(a, totalcellspercluster)
-b
-b[1:3,1]
-c0 <- (b[1:2,1]/totalcellssample)*100
-c1 <- (b[1:2,2]/totalcellssample)*100
-c2 <- (b[1:2,3]/totalcellssample)*100
+# Calculate frequencies per cluster
+numberofcells <- table(AKPS_sub$orig.ident, AKPS_sub$seurat_clusters)
+totalcellssample <- colSums(numberofcells)
+totalcellspercluster <- c(totalcellssample, sum(totalcellssample))
 
-c <- rbind(c0,c1,c2)
-colSums(c)
+# Combine the tables
+a <- cbind(numberofcells, totalcellssample)
+b <- rbind(a, totalcellspercluster)
 
-rownames(c) =  rev(c("cluster 0", "cluster 1", "cluster 2"))
-c
+# Calculate percentages
+percentage <- (b[1:2, ] / b[3, ]) * 100
 
-#plot
+# Create a dataframe with percentages
+cluster_percentage <- as.data.frame(t(percentage))
+rownames(cluster_percentage) <- c("cluster 0", "cluster 1", "cluster 2")
+colnames(cluster_percentage) <- paste0("Sample ", 1:2)
+
+# Plot
 par(mar=c(6,8,2,14))
 pdf(file="Clusterbreakdown.pdf")
-barplot(c, horiz=TRUE,
-        legend = T, border=NA,
-        args.legend=list(bty = "n",x=130, cex=.8),
+barplot(as.matrix(cluster_percentage), horiz=TRUE,
+        legend = TRUE, border=NA,
+        args.legend=list(bty = "n", x=130, cex=.8),
         main = "Cluster breakdown per sample", 
         las = 1, 
         col= met.brewer("Isfahan2", 3))
