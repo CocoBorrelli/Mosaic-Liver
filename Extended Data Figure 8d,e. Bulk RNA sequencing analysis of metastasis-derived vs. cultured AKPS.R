@@ -72,7 +72,7 @@ Annotation_mouse <- function(zUMI_output, prefix) {
 #"GAGTGG_poolC"   mets in AMO25934          
 #"GTGAAA_poolC"   AKPS sLPmCherry 1
 
-poolA <- readRDS("poolA/zUMIs_output/expression/bulk_orgs_round2.dgecounts.rds")
+poolA <- readRDS("poolA.dgecounts.rds")
 colnames(poolA$umicount$exon$all)
 poolA_ann <- Annotation_mouse(poolA, "poolA")
 colnames(poolA_ann) <- c("mets in AMO25713", "AKPS sLPmCherry 3","KPC parental", 
@@ -80,7 +80,7 @@ colnames(poolA_ann) <- c("mets in AMO25713", "AKPS sLPmCherry 3","KPC parental",
                          "mets in AMO25715", "KPC shRNA EV 2", "KPC shRNA EV 3")
 poolA_ann$Gene <- rownames(poolA_ann)
 
-poolB <- readRDS("poolB/zUMIs_output/expression/bulk_orgs_round2.dgecounts.rds")
+poolB <- readRDS("poolB.dgecounts.rds")
 colnames(poolB$umicount$exon$all)
 poolB_ann <- Annotation_mouse(poolB, "poolB")
 colnames(poolB_ann) <- c("AKPS sLPmCherry 2", 
@@ -94,7 +94,7 @@ colnames(poolB_ann) <- c("AKPS sLPmCherry 2",
                          "mets in AMO25710")      
 poolB_ann$Gene <- rownames(poolB_ann) 
 
-poolC <- readRDS("poolC/zUMIs_output/expression/bulk_orgs_round2.dgecounts.rds")
+poolC <- readRDS("poolC.dgecounts.rds")
 colnames(poolC$umicount$exon$all)
 poolC_ann <- Annotation_mouse(poolC, "poolC")
 View(poolC_ann)
