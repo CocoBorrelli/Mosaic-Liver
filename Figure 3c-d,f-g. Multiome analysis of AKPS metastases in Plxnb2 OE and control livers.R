@@ -1,14 +1,14 @@
-#This code performs the analysis of multiomic dataset
+#This code performs the analysis of 4 multiomic single-nucleus RNA and ATAC sequencing datasets generated from livers of mice subjected to intraslenic AKPS injection
+#following injection with AAV8-sgPlxnb2OE (2 mice) or with AAV8-sgNT (2 mice). 
 
 
 ######CREATE UNIFIED SET OF PEAKS BEFORE MERGING OBJECT######
-#To create a unified set of peaks we can use functions from the GenomicRanges package. 
-#The reduce function from GenomicRanges will merge all intersecting peaks.
+#To create a unified set of peaks we can use functions from the GenomicRanges package. The reduce function from GenomicRanges will merge all intersecting peaks.
 
-#if (!require("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
+#install and load packages
+if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 
-#BiocManager::install("GenomicRanges")
+BiocManager::install("GenomicRanges")
 
 library(Signac)
 library(Seurat)
@@ -17,27 +17,23 @@ library(BSgenome.Mmusculus.UCSC.mm10)
 library(magrittr)
 library(dplyr)
 
-gr <- GRanges(seqnames = "chr1", ranges = IRanges(start = c(20, 70, 300), end = c(120, 200, 400)))
-gr
 
 # read in peak sets
 peaks.OE <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE_outs/atac_peaks.bed",
-  col.names = c("chr", "start", "end")
-)
+  file = "~/nuclei/OE_outs/atac_peaks.bed",
+  col.names = c("chr", "start", "end"))
+
 peaks.NT <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT_outs/atac_peaks.bed",
-  col.names = c("chr", "start", "end")
-)
+  file = "~/nuclei/NT_outs/atac_peaks.bed",
+  col.names = c("chr", "start", "end"))
 
 peaks.OE.2 <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE2/outs/atac_peaks.bed",
-  col.names = c("chr", "start", "end")
-)
+  file = "~/nuclei/OE2/outs/atac_peaks.bed",
+  col.names = c("chr", "start", "end"))
+
 peaks.NT.2 <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT2/outs/atac_peaks.bed",
-  col.names = c("chr", "start", "end")
-)
+  file = "~/nuclei/NT2/outs/atac_peaks.bed",
+  col.names = c("chr", "start", "end"))
 
 # convert to genomic ranges
 peaks.OE <- makeGRangesFromDataFrame(peaks.OE)
@@ -55,7 +51,7 @@ combined.peaks
 
 # load metadata
 md.OE <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE_outs/per_barcode_metrics.csv",
+  file = "~/nuclei/OE_outs/per_barcode_metrics.csv",
   stringsAsFactors = FALSE,
   sep = ",",
   header = TRUE,
@@ -63,7 +59,7 @@ md.OE <- read.table(
 )[-1, ] # remove the first row
 
 md.NT <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT_outs/per_barcode_metrics.csv",
+  file = "~/nuclei/NT_outs/per_barcode_metrics.csv",
   stringsAsFactors = FALSE,
   sep = ",",
   header = TRUE,
@@ -71,48 +67,44 @@ md.NT <- read.table(
 )[-1, ]
 
 md.OE.2 <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE2/outs/per_barcode_metrics.csv",
+  file = "~/nuclei/OE2/outs/per_barcode_metrics.csv",
   stringsAsFactors = FALSE,
   sep = ",",
   header = TRUE,
   row.names = 1
-)[-1, ] # remove the first row
+)[-1, ] 
 
 md.NT.2 <- read.table(
-  file = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT2/outs/per_barcode_metrics.csv",
+  file = "~/nuclei/NT2/outs/per_barcode_metrics.csv",
   stringsAsFactors = FALSE,
   sep = ",",
   header = TRUE,
   row.names = 1
 )[-1, ]
 
-# perform an initial filtering of low count cells
-#md.OE <- md.OE[md.OE$passed_filters > 500, ]
-#md.NT <- md.NT[md.NT$passed_filters > 500, ]
-
 
 ######CREATE SEPARATE OBJECT WITH RNA, ATAC AND CALLED PEAKS######
 # create fragment objects
 frags.OE <- CreateFragmentObject(
-  path = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE_outs/atac_fragments.tsv.gz",
+  path = "~/nuclei/OE_outs/atac_fragments.tsv.gz",
   cells = rownames(md.OE),
   validate.fragments = F
 )
 
 frags.NT <- CreateFragmentObject(
-  path = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT_outs/atac_fragments.tsv.gz",
+  path = "~/nuclei/NT_outs/atac_fragments.tsv.gz",
   cells = rownames(md.NT),
   validate.fragments = F
 )
 
 frags.OE.2 <- CreateFragmentObject(
-  path = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/OE2/outs/atac_fragments.tsv.gz",
+  path = "~/nuclei/OE2/outs/atac_fragments.tsv.gz",
   cells = rownames(md.OE.2),
   validate.fragments = F
 )
 
 frags.NT.2 <- CreateFragmentObject(
-  path = "~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei/NT2/outs/atac_fragments.tsv.gz",
+  path = "~/nuclei/NT2/outs/atac_fragments.tsv.gz",
   cells = rownames(md.NT.2),
   validate.fragments = F
 )
@@ -152,7 +144,7 @@ annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Mmusculus.v79)
 seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
 
 # create a Seurat object containing the RNA data
-counts_OE <- Read10X_h5("/media/Coco/MOSAIC LIVER/Experiments/nuclei/OE_outs/filtered_feature_bc_matrix.h5")
+counts_OE <- Read10X_h5("~/nuclei/OE_outs/filtered_feature_bc_matrix.h5")
 OE <- CreateSeuratObject(
   counts = counts_OE$`Gene Expression`,
   assay = "RNA", project = "OE" 
@@ -169,8 +161,8 @@ OE
 
 #call peaks using MACS2
 DefaultAssay(OE) <- "ATAC"
-peaks_OE <- CallPeaks(OE, macs2.path="/home/borrellc/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"),
-                      fragment.tempdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"))
+peaks_OE <- CallPeaks(OE, macs2.path="/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/nuclei"),
+                      fragment.tempdir = tempdir("~/nuclei"))
 
 # remove peaks on nonstandard chromosomes and in genomic blacklist regions
 peaks_OE <- keepStandardChromosomes(peaks_OE, pruning.mode = "coarse")
@@ -191,7 +183,7 @@ OE[["peaks"]] <- CreateChromatinAssay(
 )
 
 #now for NT
-counts_NT <- Read10X_h5("/media/Coco/MOSAIC LIVER/Experiments/nuclei/NT_outs/filtered_feature_bc_matrix.h5")
+counts_NT <- Read10X_h5("/nuclei/NT_outs/filtered_feature_bc_matrix.h5")
 
 NT <- CreateSeuratObject(
   counts = counts_NT$`Gene Expression`,
@@ -210,8 +202,8 @@ NT
 
 #call peaks using MACS2
 DefaultAssay(NT) <- "ATAC"
-peaks_NT <- CallPeaks(NT, macs2.path="/home/borrellc/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"),
-                      fragment.tempdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"))
+peaks_NT <- CallPeaks(NT, macs2.path="/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/nuclei"),
+                      fragment.tempdir = tempdir("~/nuclei"))
 
 # remove peaks on nonstandard chromosomes and in genomic blacklist regions
 peaks_NT <- keepStandardChromosomes(peaks_NT, pruning.mode = "coarse")
@@ -233,7 +225,7 @@ NT[["peaks"]] <- CreateChromatinAssay(
 
 
 # create a Seurat object containing the RNA data
-counts_OE.2 <- Read10X_h5("/media/Coco/MOSAIC LIVER/Experiments/nuclei/OE2/outs/filtered_feature_bc_matrix.h5")
+counts_OE.2 <- Read10X_h5("/nuclei/OE2/outs/filtered_feature_bc_matrix.h5")
 OE.2 <- CreateSeuratObject(
   counts = counts_OE.2$`Gene Expression`,
   assay = "RNA", project = "OE.2" 
@@ -250,8 +242,8 @@ OE.2
 
 #call peaks using MACS2
 DefaultAssay(OE.2) <- "ATAC"
-peaks_OE.2 <- CallPeaks(OE.2, macs2.path="/home/borrellc/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"),
-                      fragment.tempdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"))
+peaks_OE.2 <- CallPeaks(OE.2, macs2.path="/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/nuclei"),
+                      fragment.tempdir = tempdir("~/nuclei"))
 
 # remove peaks on nonstandard chromosomes and in genomic blacklist regions
 peaks_OE.2 <- keepStandardChromosomes(peaks_OE.2, pruning.mode = "coarse")
@@ -291,8 +283,8 @@ NT.2
 
 #call peaks using MACS2
 DefaultAssay(NT.2) <- "ATAC"
-peaks_NT.2 <- CallPeaks(NT.2, macs2.path="/home/borrellc/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"),
-                      fragment.tempdir = tempdir("~/NAS/Coco/MOSAIC LIVER/Experiments/nuclei"))
+peaks_NT.2 <- CallPeaks(NT.2, macs2.path="/miniconda3/envs/macs2-new/bin/macs2", outdir = tempdir("~/nuclei"),
+                      fragment.tempdir = tempdir("~/nuclei"))
 
 # remove peaks on nonstandard chromosomes and in genomic blacklist regions
 peaks_NT.2 <- keepStandardChromosomes(peaks_NT.2, pruning.mode = "coarse")
