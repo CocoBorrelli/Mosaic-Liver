@@ -9,8 +9,7 @@ library(magrittr)
 library(dplyr)
 library(STutility)
 
-#load Visium data of human CRC hepatic metastasis, spots bulk data is deconvoluted with SPOTlight 
-#(Elodua-Bayes et al, 2021) using two published scRNAseq datasets (Lee et al, 2020 and Massalha et al, 2020)
+#load Visium data of human CRC hepatic metastasis, spots bulk data is deconvoluted with SPOTlight (Elodua-Bayes et al, 2021) using two published scRNAseq datasets (Lee et al, 2020 and Massalha et al, 2020)
 load("Met1rep_seuratObj_V2.RData")
 
 # Define infotable for STUtility
