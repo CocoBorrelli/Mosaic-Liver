@@ -72,7 +72,7 @@ Annotation_mouse <- function(zUMI_output, prefix) {
 #"GAGTGG_poolC"   mets in AMO25934          
 #"GTGAAA_poolC"   AKPS sLPmCherry 1
 
-poolA <- readRDS("poolA/zUMIs_output/expressionbulk_orgs_round2.dgecounts.rds")
+poolA <- readRDS("poolA/zUMIs_output/expression/bulk_orgs_round2.dgecounts.rds")
 colnames(poolA$umicount$exon$all)
 poolA_ann <- Annotation_mouse(poolA, "poolA")
 colnames(poolA_ann) <- c("mets in AMO25713", "AKPS sLPmCherry 3","KPC parental", 
