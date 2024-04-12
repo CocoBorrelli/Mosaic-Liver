@@ -10,7 +10,8 @@ library(dplyr)
 library(STutility)
 
 #load Visium data of human CRC hepatic metastasis, spots bulk data is deconvoluted with SPOTlight (Elodua-Bayes et al, 2021) using two published scRNAseq datasets (Lee et al, 2020 and Massalha et al, 2020)
-load("Met1rep_seuratObj_V2.RData")
+#the analysis below was performed on two technical replicates of the same metastatic sample (both datasets availbale on Zenodo)
+load("Met1rep1_seuratObj_V2.RData")
 
 # Define infotable for STUtility
 infoTable <- data.frame(samples=NA, spotfiles=NA, imgs=NA, json=NA, condition=NA)
